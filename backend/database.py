@@ -1,20 +1,28 @@
+import os
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, declarative_base
-from backend.config import settings  # Importamos tu configuración desacoplada
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
+# Correcto
+from .config import settings
 
-# 1. Obtenemos la URL limpia directamente validada por Pydantic
-DATABASE_URL = settings.DATABASE_URL
+# 1. Connection string pointing to local PostgreSQL and school_db
+# Replace 'YOUR_PASSWORD' with the password you typed into psql
+DATABASE_URL = os.getenv(
+    "DATABASE_URL", 
+    "postgresql://postgres.zxkzshentjtrmgfjtwuf:S96Au52Phv1bx30@aws-0-us-east-1.pooler.supabase.com:5432/postgres"
+    #"postgresql://postgres:S96Au52Phv1bx30@db.zxkzshentjtrmgfjtwuf.supabase.co:5432/postgres"
+)
 
-# 2. Creamos el motor de conexión (Engine)
+# 2. Create the SQLAlchemy engine
 engine = create_engine(DATABASE_URL)
 
-# 3. Creamos la fábrica de sesiones (SessionLocal)
+# 3. Create the SessionLocal class for DB sessions
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-# 4. Base para heredar en nuestros modelos de SQLAlchemy
+# 4. Create the Base class for your models to inherit from
 Base = declarative_base()
 
-# 5. Función auxiliar (Dependency) para abrir y cerrar la sesión automáticamente
+# 5. Dependency helper function to handle DB sessions per request
 def get_db():
     db = SessionLocal()
     try:
