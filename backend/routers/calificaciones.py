@@ -1,5 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
 from backend.schemas import CalificacionUpdate, CalificacionResponse
+from backend.database import get_db
+from backend.models import User
 
 router = APIRouter(prefix="/calificaciones", tags=["Calificaciones"])
 
