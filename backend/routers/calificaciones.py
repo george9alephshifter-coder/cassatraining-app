@@ -14,3 +14,5 @@ async def actualizar_nota(data: CalificacionUpdate):
         "materia_id": data.materia_id,
         "nota_actualizada": data.nota
     }
+# Agrega esto al final de backend/routers/calificaciones.py
+router_courses = router  # O el nombre de tu APIRouter principal en este archivo (ej. router)

@@ -1,6 +1,26 @@
 from pydantic import BaseModel, Field
-from uuid import UUID
-from typing import Optional
+from uuid import UUID, uuid4
+from typing import Optional, List
+from datetime import datetime
+
+class ComunicadoCreate(BaseModel):
+    titulo: str
+    contenido: str
+    destinatario: Optional[str] = None  # Ejemplo: "todos", "cursos", "profesores", etc.
+
+# Alias para compatibilidad total con routers que usen "ComunicacionCreate"
+ComunicacionCreate = ComunicadoCreate
+
+class ComunicacionOut(BaseModel):
+    id: UUID = Field(default_factory=uuid4)
+    titulo: str
+    contenido: str
+    destinatario: Optional[str] = None
+    fecha_creacion: Optional[datetime] = None
+
+    model_config = {
+        "from_attributes": True
+    }
 
 class CalificacionUpdate(BaseModel):
     estudiante_id: UUID
