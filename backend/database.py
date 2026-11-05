@@ -1,28 +1,24 @@
 import os
 from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
-# Correcto
-from .config import settings
+from sqlalchemy.orm import sessionmaker, declarative_base
 
-# 1. Connection string pointing to local PostgreSQL and school_db
-# Replace 'YOUR_PASSWORD' with the password you typed into psql
+# 1. Obtenemos la URL de las variables de entorno o usamos tu fallback
 DATABASE_URL = os.getenv(
     "DATABASE_URL", 
-    "postgresql://postgres.zxkzshentjtrmgfjtwuf:S96Au52Phv1bx30@aws-0-us-east-1.pooler.supabase.com:5432/postgres"
-    #"postgresql://postgres:S96Au52Phv1bx30@db.zxkzshentjtrmgfjtwuf.supabase.co:5432/postgres"
+    "postgresql+psycopg2://postgres.zxkzshentjtrmgfjtwuf:S96Au52Phv1bx30@aws-0-us-east-1.pooler.supabase.com:5432/postgres"
 )
 
-# 2. Create the SQLAlchemy engine
+# 2. Forzamos la compatibilidad con psycopg2 para SQLAlchemy 2.0
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+psycopg2://", 1)
+elif DATABASE_URL.startswith("postgresql://") and not DATABASE_URL.startswith("postgresql+psycopg2://"):
+    DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+psycopg2://", 1)
+
+# 3. Creamos el motor de base de datos
 engine = create_engine(DATABASE_URL)
-
-# 3. Create the SessionLocal class for DB sessions
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-# 4. Create the Base class for your models to inherit from
 Base = declarative_base()
 
-# 5. Dependency helper function to handle DB sessions per request
 def get_db():
     db = SessionLocal()
     try:
