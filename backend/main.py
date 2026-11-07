@@ -1,61 +1,34 @@
 ﻿import json
 import os
 import sys
+from datetime import datetime
 from pathlib import Path
 from typing import List, Optional
-from fastapi import FastAPI
-from backend.routers import courses, asistencia, dece, communications
 
-# Si tus importaciones estÃ¡n asÃ­:
-from backend.models import ComunicacionDECEModel
-
-# O si estÃ¡s importando desde la misma carpeta backend:
-from backend.models import ComunicacionDECEModel
 import httpx
+import pytz
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from fastapi import FastAPI, Depends, HTTPException
-from sqlalchemy.orm import Session
-from datetime import datetime
-import pytz
-
-# Asegurar la resoluciÃ³n del directorio raÃ­z del backend
+# Asegurar la resolución del directorio raíz del backend
 BASE_DIR = Path(__file__).resolve().parent
 if str(BASE_DIR) not in sys.path:
     sys.path.append(str(BASE_DIR))
 
-# Importaciones directas desde el paquete backend
-from backend.database import Base, engine, get_db
-from backend.models import Asistencia, Calificacion
-from backend.routers import calificaciones, courses, dece, despacho
+# Importaciones locales directas (ya que main.py está dentro de backend)
+from database import Base, engine, get_db
+from models import Asistencia, Calificacion, ComunicacionDECEModel
+from routers import asistencia, calificaciones, communications, courses, dece, despacho
 
-# CreaciÃ³n de tablas ORM en PostgreSQL
+# Creación de tablas ORM en PostgreSQL
 Base.metadata.create_all(bind=engine)
 
+app = FastAPI(title="Sistema CTS Backend", version="1.0.0")
 
-
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-
-app = FastAPI()
-
-# Dominios específicos permitidos
-origins = [
-    "https://app.cassatraining.com",
-    "https://nextapp-1-eight.vercel.app",
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-]
-
-
-
-from fastapi.middleware.cors import CORSMiddleware
-
-# Configuración robusta de CORS para admitir Vercel, Localhost y cualquier ngrok activo
+# Configuración robusta de CORS para Vercel, Localhost y Ngrok
 app.add_middleware(
     CORSMiddleware,
     allow_origin_regex=r"https://.*\.ngrok-free\.dev|https://.*\.vercel\.app|http://localhost:\d+|http://127\.0\.0\.1:\d+",
@@ -70,10 +43,9 @@ app.include_router(dece.router)
 app.include_router(despacho.router)
 app.include_router(
     calificaciones.router,
-    prefix="/api/calificaciones",  # <-- Must include /api/calificaciones
-    tags=["Calificaciones"]
+    prefix="/api/calificaciones",
+    tags=["Calificaciones"],
 )
-app.include_router(calificaciones.router)
 app.include_router(calificaciones.router_courses)
 app.include_router(asistencia.router)
 app.include_router(communications.router)
@@ -116,6 +88,17 @@ class LessonPlanRequest(BaseModel):
     learning_objectives: str
 
 
+class ComunicacionCreate(BaseModel):
+    codigo_expediente: Optional[str] = None
+    materia: str
+    curso: str
+    emisor_rol: str
+    emisor_id: str
+    receptor_rol: str
+    comunicado: str
+    archivo_url: Optional[str] = None
+
+
 # --- GENERAL ENDPOINTS ---
 @app.get("/", tags=["Health Check"])
 def read_root():
@@ -123,9 +106,8 @@ def read_root():
 
 
 # --- DESPACHO DE REPORTES MULTI-DEPARTAMENTO ---
-@app.post("/api/dece/comunicaciones")
+@app.post("/api/dece/comunicaciones", tags=["DECE"])
 def enviar_comunicado(payload: ComunicacionCreate, db: Session = Depends(get_db)):
-    # Zona horaria de Ecuador para el sello de sincronizaciÃ³n
     tz_ec = pytz.timezone('America/Guayaquil')
     ahora = datetime.now(tz_ec)
 
@@ -151,7 +133,8 @@ def enviar_comunicado(payload: ComunicacionCreate, db: Session = Depends(get_db)
         "data": nuevo_mensaje
     }
 
-@app.get("/api/dece/comunicaciones/{curso}")
+
+@app.get("/api/dece/comunicaciones/{curso}", tags=["DECE"])
 def obtener_historial_curso(curso: str, db: Session = Depends(get_db)):
     mensajes = db.query(ComunicacionDECEModel)\
                  .filter(ComunicacionDECEModel.curso == curso)\
@@ -159,16 +142,13 @@ def obtener_historial_curso(curso: str, db: Session = Depends(get_db)):
                  .all()
     return mensajes
 
+
 @app.post("/api/v1/dispatch", tags=["Despacho Operativo"])
 def dispatch_report(payload: DispatchPayload, db: Session = Depends(get_db)):
-    """
-    Guarda el reporte en la tabla correspondiente segÃºn el origen/rol emisor del payload.
-    """
     dest = (payload.destination or "").upper()
-    sender = (payload.sender_role or getattr(payload, 'sender_role', 'VICERRECTORADO') or 'VICERRECTORADO').upper()
+    sender = (payload.sender_role or 'VICERRECTORADO').upper()
     case_code_val = payload.case_code if payload.case_code else "CAS-GENERAL"
 
-    # SelecciÃ³n dinÃ¡mica de tabla segÃºn origen
     if "RECT" in sender:
         table_name = "public.rectorado_reports"
         role_label = "Rectora"
@@ -201,18 +181,13 @@ def dispatch_report(payload: DispatchPayload, db: Session = Depends(get_db)):
         return {"status": "success", "message": f"Reporte guardado exitosamente en {table_name}"}
     except Exception as e:
         db.rollback()
-        print("Error al despachar reporte:", str(e))
         raise HTTPException(
             status_code=500, detail=f"Error en base de datos al guardar reporte: {str(e)}"
         )
 
 
-# --- CONSULTA UNIFICADA CON FEEDBACK BIDIRECCIONAL ---
 @app.get("/api/reportes", tags=["Despacho Operativo"])
 def get_reportes(origen: str, destino: Optional[str] = None, db: Session = Depends(get_db)):
-    """
-    Combina dece_reports, vicerrectorado_reports y rectorado_reports para ofrecer feedback cruzado.
-    """
     try:
         origen_clean = origen.upper() if origen else ""
         destino_clean = destino.upper() if destino else ""
@@ -222,14 +197,10 @@ def get_reportes(origen: str, destino: Optional[str] = None, db: Session = Depen
             FROM (
                 SELECT id, case_code, 'DECE' AS origen, UPPER(destination) AS destino, observations, file_name, sent_at 
                 FROM public.dece_reports
-                
                 UNION ALL
-                
                 SELECT id, case_code, 'VICERRECTORADO' AS origen, UPPER(destination) AS destino, observations, file_name, sent_at 
                 FROM public.vicerrectorado_reports
-                
                 UNION ALL
-                
                 SELECT id, case_code, 'RECTORADO' AS origen, UPPER(destination) AS destino, observations, file_name, sent_at 
                 FROM public.rectorado_reports
             ) AS reportes_totales
@@ -254,13 +225,11 @@ def get_reportes(origen: str, destino: Optional[str] = None, db: Session = Depen
         return list(result)
 
     except Exception as e:
-        print("Error al consultar la uniÃ³n de reportes:", str(e))
         raise HTTPException(
             status_code=500, detail=f"Error al obtener historial de reportes: {str(e)}"
         )
 
 
-# --- DECE QUERY ENDPOINT ---
 @app.get("/api/v1/dece-reports", tags=["DECE"])
 def get_dece_reports(db: Session = Depends(get_db)):
     try:
@@ -272,13 +241,11 @@ def get_dece_reports(db: Session = Depends(get_db)):
         result = db.execute(query).mappings().all()
         return list(result)
     except Exception as e:
-        print("Error al consultar reportes DECE:", str(e))
         raise HTTPException(
             status_code=500, detail=f"Error al obtener reportes: {str(e)}"
         )
 
 
-# --- ATOMIC SAVE-RECORDS ENDPOINT ---
 @app.post("/api/v1/academics/save-records", tags=["Academics"])
 def save_records(payload: SaveRecordsPayload, db: Session = Depends(get_db)):
     try:
@@ -336,30 +303,19 @@ def save_records(payload: SaveRecordsPayload, db: Session = Depends(get_db)):
 
     except Exception as e:
         db.rollback()
-        print("CRITICAL DATABASE ERROR EN SAVE-RECORDS:", str(e))
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# --- ACADEMIC TABLES QUERY ENDPOINTS ---
 @app.get("/api/v1/calificaciones", tags=["Calificaciones"])
 def get_calificaciones(db: Session = Depends(get_db)):
     return db.query(Calificacion).order_by(Calificacion.id.asc()).all()
-
-@app.get("/api/calificaciones")
-def get_calificaciones():
-    return {"status": "ok", "message": "Endpoint de calificaciones activo"}
 
 
 @app.get("/api/v1/asistencia", tags=["Asistencia"])
 def get_asistencia(db: Session = Depends(get_db)):
     return db.query(Asistencia).order_by(Asistencia.id.asc()).all()
 
-@app.get("/api/asistencia")
-def get_asistencia():
-    return {"status": "ok", "message": "Endpoint de asistencia activo"}
 
-
-# --- LESSON PLAN GENERATION ENDPOINT ---
 @app.post("/api/ai/generate-lesson-plan", tags=["IA Generativa"])
 async def generate_lesson_plan(request: LessonPlanRequest):
     api_key = os.getenv("GEMINI_API_KEY")
@@ -409,5 +365,4 @@ async def generate_lesson_plan(request: LessonPlanRequest):
         return json.loads(raw_text)
 
     except Exception as e:
-        print("ERROR EN GENERACION DE PLAN DE CLASE:", str(e))
         raise HTTPException(status_code=500, detail=str(e))
