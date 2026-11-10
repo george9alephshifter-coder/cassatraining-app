@@ -36,6 +36,7 @@ class User(Base):
 
 class Evaluation(Base):
     __tablename__ = "evaluations"
+    __table_args__ = {'extend_existing': True}  # <-- Añade esta línea
 
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String(150), nullable=False)
@@ -51,6 +52,7 @@ class Evaluation(Base):
 
 class Calificacion(Base):
     __tablename__ = "calificaciones"
+    __table_args__ = {'extend_existing': True}  # <-- Añade esta línea
 
     id = Column(Integer, primary_key=True, index=True)
     student_id = Column(Integer, ForeignKey("users.id"), nullable=False)
