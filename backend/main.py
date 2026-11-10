@@ -20,8 +20,10 @@ if str(BASE_DIR) not in sys.path:
 
 # Importaciones locales directas (ya que main.py está dentro de backend)
 from database import Base, engine, get_db
-from models import Asistencia, Calificacion, ComunicacionDECEModel
+from backend.models import Asistencia, Calificacion, ComunicacionDECEModel
 from routers import asistencia, calificaciones, communications, courses, dece, despacho
+from backend.routers import communications
+from backend.routers import calificaciones
 
 # Creación de tablas ORM en PostgreSQL
 Base.metadata.create_all(bind=engine)
@@ -48,7 +50,9 @@ app.include_router(
 )
 app.include_router(calificaciones.router_courses)
 app.include_router(asistencia.router)
-app.include_router(communications.router)
+app.include_router(communications.router, prefix="/api")
+app.include_router(calificaciones.router, prefix="/api/v1")
+
 
 
 # --- PYDANTIC SCHEMAS ---

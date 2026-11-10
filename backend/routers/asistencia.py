@@ -6,6 +6,7 @@ from backend.database import get_db
 from backend.models import Asistencia
 from backend.database import get_db
 from backend.models import User
+from backend.models import Role, User, Asistencia  # Use 'backend.models' consistently
 
 router = APIRouter(prefix="/api/asistencia", tags=["asistencia"])
 

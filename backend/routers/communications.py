@@ -8,7 +8,8 @@ from backend.schemas import ComunicadoCreate  # <--- Asegúrate de que esta impo
 from backend.database import get_db
 from backend.models import User
 
-router = APIRouter(prefix="/api/comunicaciones", tags=["Comunicaciones"])
+
+router = APIRouter(prefix="/comunicaciones", tags=["Communications"])
 
 @router.post("", response_model=schemas.ComunicacionOut, status_code=status.HTTP_201_CREATED)
 def crear_comunicacion(payload: schemas.ComunicacionCreate, db: Session = Depends(get_db)):

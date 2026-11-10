@@ -5,8 +5,10 @@ import uuid
 from datetime import datetime, timezone, date
 from backend.database import Base
 
+    # ... rest of your columns
 class Role(Base):
     __tablename__ = "roles"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(50), unique=True, nullable=False)
@@ -15,8 +17,9 @@ class Role(Base):
     users = relationship("User", back_populates="role")
 
 class User(Base):
-    __tablename__ = "users"
-
+    __tablename__ = "users" 
+    __table_args__ = {'extend_existing': True}
+   
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String(100), unique=True, nullable=False, index=True)
     hashed_password = Column(String(255), nullable=False)
