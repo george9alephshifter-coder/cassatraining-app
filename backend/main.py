@@ -366,9 +366,7 @@ async def generate_lesson_plan(request: LessonPlanRequest):
         raw_text = data["candidates"][0]["content"]["parts"][0]["text"]
         return json.loads(raw_text)
 
+
     except Exception as e:
-<<<<<<< HEAD
-        raise HTTPException(status_code=500, detail=str(e))
-=======
-        raise HTTPException(status_code=500, detail=str(e))
->>>>>>> 86d4cf593e1f4efe0299a9c3babb4347f7b0726a
+        raise HTTPException(status_code=500, detail=str(e))    
+
