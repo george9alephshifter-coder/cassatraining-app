@@ -64,6 +64,7 @@ class Calificacion(Base):
 
 class Asistencia(Base):
     __tablename__ = "asistencias"
+    __table_args__ = {'extend_existing': True}  # <-- Añade esta línea
 
     id = Column(Integer, primary_key=True, index=True)
     student_id = Column(Integer, ForeignKey("users.id"), nullable=False)
@@ -75,6 +76,7 @@ class Asistencia(Base):
 
 class Curso(Base):
     __tablename__ = "cursos"
+    __table_args__ = {'extend_existing': True}  # <-- Añade esta línea
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(100), nullable=False)
@@ -82,6 +84,7 @@ class Curso(Base):
 
 class Comunicacion(Base):
     __tablename__ = "comunicaciones"
+    __table_args__ = {'extend_existing': True}  # <-- Añade esta línea
 
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String(150), nullable=False)
@@ -92,6 +95,7 @@ class Comunicacion(Base):
 
 class DeceRecord(Base):
     __tablename__ = "dece_records"
+    __table_args__ = {'extend_existing': True}  # <-- Añade esta línea
 
     id = Column(Integer, primary_key=True, index=True)
     student_id = Column(Integer, ForeignKey("users.id"), nullable=False)
@@ -100,6 +104,7 @@ class DeceRecord(Base):
 
 class ComunicacionDECEModel(Base):
     __tablename__ = "comunicaciones_dece"
+    __table_args__ = {'extend_existing': True}  # <-- Añade esta línea
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
     titulo = Column(String, nullable=False)
@@ -109,6 +114,7 @@ class ComunicacionDECEModel(Base):
 
 class ReporteDespacho(Base):
     __tablename__ = "reportes_despacho"
+    __table_args__ = {'extend_existing': True}  # <-- Añade esta línea
 
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String(150), nullable=False)
@@ -117,6 +123,7 @@ class ReporteDespacho(Base):
 
 class VicerrectoradoReport(Base):
     __tablename__ = "vicerrectorado_reports"
+    __table_args__ = {'extend_existing': True}  # <-- Añade esta línea
 
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String(150), nullable=False)
@@ -125,6 +132,7 @@ class VicerrectoradoReport(Base):
 
 class RectoradoReport(Base):
     __tablename__ = "rectorado_reports"
+    __table_args__ = {'extend_existing': True}  # <-- Añade esta línea
 
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String(150), nullable=False)
