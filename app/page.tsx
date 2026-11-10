@@ -387,8 +387,8 @@ function ModuloDespachoDECE({
 function TeacherDashboard({ userProfile }: { userProfile: UserProfile | null }) {
   const [activeSubject] = useState<string>(userProfile?.subject || 'Matemáticas');
   const [activeTab, setActiveTab] = useState<"calificaciones" | "asistencia">("calificaciones");
-  const [, setCalificacionesData] = useState<Calificacion[]>([]);
-  const [, setAsistenciaData] = useState<AsistenciaRecord[]>([]);
+  const [setCalificacionesData] = useState<Calificacion[]>([]);
+  const [setAsistenciaData] = useState<AsistenciaRecord[]>([]);
   const [dashboardView, setDashboardView] = useState<'main' | 'matrix'>('main');
 
   const availableCourses = TEACHER_COURSES.default;
