@@ -20,10 +20,8 @@ if str(BASE_DIR) not in sys.path:
 
 # Importaciones locales directas (ya que main.py está dentro de backend)
 from database import Base, engine, get_db
-from backend.models import Asistencia, Calificacion, ComunicacionDECEModel
+from models import Asistencia, Calificacion, ComunicacionDECEModel
 from routers import asistencia, calificaciones, communications, courses, dece, despacho
-from backend.routers import communications
-from backend.routers import calificaciones
 
 # Creación de tablas ORM en PostgreSQL
 Base.metadata.create_all(bind=engine)
@@ -369,4 +367,8 @@ async def generate_lesson_plan(request: LessonPlanRequest):
         return json.loads(raw_text)
 
     except Exception as e:
+<<<<<<< HEAD
         raise HTTPException(status_code=500, detail=str(e))
+=======
+        raise HTTPException(status_code=500, detail=str(e))
+>>>>>>> 86d4cf593e1f4efe0299a9c3babb4347f7b0726a
