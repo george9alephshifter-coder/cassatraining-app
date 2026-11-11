@@ -454,16 +454,15 @@ function TeacherDashboard({ userProfile }: { userProfile: UserProfile | null }) 
 const saveCourseData = async () => {
     const API_URL = getApiUrl();
     try {
-      const payloadGrades = {
-        course_id: selectedCourse,
-        teacher_username: userProfile?.username || 'teacher_math',
-        students: currentCourseStudents.map((s) => ({
-          id: s.id,
-          name: s.name,
-          grade: parseFloat(s.grade) || 0.0
-        }))
-      };
-
+const payloadGrades = {
+  course_id: selectedCourse,
+  teacher_username: userProfile?.username || 'teacher_math',
+  students: currentCourseStudents.map((s) => ({
+    id: s.id,
+    name: s.name,
+    grade: typeof s.grade === 'number' ? s.grade : (parseFloat(s.grade) || 0.0)
+  }))
+};
       const payloadAttendance = {
         course_id: selectedCourse,
         teacher_username: userProfile?.username || 'teacher_math',
