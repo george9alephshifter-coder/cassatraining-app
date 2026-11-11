@@ -451,69 +451,65 @@ function TeacherDashboard({ userProfile }: { userProfile: UserProfile | null }) 
 
   // --- CONFIRMAR CAMBIOS (Saves to PostgreSQL) ---
 
-  const saveCourseData = async () => {
-  setIsSaving(true);
-  try {
+const saveCourseData = async () => {
     const API_URL = getApiUrl();
-    
-    // Mapeo exacto requerido por el esquema Pydantic de FastAPI
-    const payloadGrades = {
-      course_id: selectedCourse,
-      teacher_username: userProfile?.username || 'selectedTeacherId',
-      students: currentCourseStudents.map((s) => ({
-        codigo: s.id,               // Mapea id -> codigo
-        estudiante: s.name,         // Mapea name -> estudiante
-        calificacion: parseFloat(String(s.grade).replace(',', '.')) || 0, // Mapea grade -> calificacion
-      }))
-    };
+    try {
+      const payloadGrades = {
+        course_id: selectedCourse,
+        teacher_username: userProfile?.username || 'teacher_math',
+        students: currentCourseStudents.map((s) => ({
+          id: s.id,
+          name: s.name,
+          grade: parseFloat(s.grade) || 0.0
+        }))
+      };
 
-    const resGrades = await fetch(`${API_URL}/api/v1/courses/update-grades`, {
-      method: 'PUT',
-      headers: { 
-        'Content-Type': 'application/json',
-        'ngrok-skip-browser-warning': 'true' 
-      },
-      body: JSON.stringify(payloadGrades)
-    });
+      const payloadAttendance = {
+        course_id: selectedCourse,
+        teacher_username: userProfile?.username || 'teacher_math',
+        students: currentCourseStudents.map((s) => ({
+          codigo: s.id,
+          estudiante: s.name,
+          asistencia: {
+            LUN: s.attendance.lunes,
+            MAR: s.attendance.martes,
+            MIE: s.attendance.miercoles,
+            JUE: s.attendance.jueves,
+            VIE: s.attendance.viernes,
+          }
+        }))
+      };
 
-    const payloadAttendance = {
-      course_id: selectedCourse,
-      teacher_username: userProfile?.username || 'selectedTeacherId',
-      students: currentCourseStudents.map((s) => ({
-        codigo: s.id,
-        estudiante: s.name,
-        asistencia: {
-          LUN: s.attendance.lunes,
-          MAR: s.attendance.martes,
-          MIE: s.attendance.miercoles,
-          JUE: s.attendance.jueves,
-          VIE: s.attendance.viernes,
-        },
-      }))
-    };
+      const [resGrades, resAttendance] = await Promise.all([
+        fetch(`${API_URL}/api/v1/courses/update-grades`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'ngrok-skip-browser-warning': 'true'
+          },
+          body: JSON.stringify(payloadGrades)
+        }),
+        fetch(`${API_URL}/api/v1/courses/update-attendance`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'ngrok-skip-browser-warning': 'true'
+          },
+          body: JSON.stringify(payloadAttendance)
+        })
+      ]);
 
-    const resAttendance = await fetch(`${API_URL}/api/v1/courses/update-attendance`, {
-      method: 'PUT',
-      headers: { 
-        'Content-Type': 'application/json',
-        'ngrok-skip-browser-warning': 'true' 
-      },
-      body: JSON.stringify(payloadAttendance)
-    });
+      if (!resGrades.ok || !resAttendance.ok) {
+        throw new Error(`Error en el servidor: ${resGrades.status} / ${resAttendance.status}`);
+      }
 
-    if (!resGrades.ok || !resAttendance.ok) {
-      throw new Error(`Error en el servidor: ${resGrades.status} ${resGrades.statusText}`);
+      alert('¡Cambios guardados exitosamente en PostgreSQL!');
+      handleFetchCalificaciones();
+    } catch (error: any) {
+      console.error('Error al sincronizar:', error);
+      alert(`No se pudo guardar en el servidor. Asegúrate de que FastAPI esté corriendo.\nDetalle: ${error.message}`);
     }
-
-    alert('¡Cambios guardados exitosamente en PostgreSQL!');
-    handleFetchCalificaciones();
-  } catch (error: any) {
-    console.error("Error al sincronizar:", error);
-    alert(`No se pudo guardar en el servidor. Detalle: ${error.message}`);
-  } finally {
-    setIsSaving(false);
-  }
-};
+  };
  
   // --- CSV DOWNLOAD HELPERS ---
   const exportCalificacionesCSV = () => {
