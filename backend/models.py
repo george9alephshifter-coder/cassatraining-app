@@ -1,3 +1,10 @@
+from sqlalchemy import Column, Integer, String, Float, ForeignKey, DateTime, Text, Date
+from sqlalchemy.orm import relationship
+from sqlalchemy.dialects.postgresql import UUID
+import uuid
+from datetime import datetime, timezone, date
+from backend.database import Base
+
 class Role(Base):
     __tablename__ = "roles"
     __table_args__ = {'extend_existing': True}
@@ -5,8 +12,7 @@ class Role(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(50), unique=True, nullable=False)
     description = Column(String(255), nullable=True)
-    # Usar la clase User directamente en lugar de string
-    users = relationship(User, back_populates="role")
+    users = relationship("User", back_populates="role")
 
 class User(Base):
     __tablename__ = "users" 
@@ -20,14 +26,13 @@ class User(Base):
     role_id = Column(Integer, ForeignKey("roles.id"), nullable=False)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
-    # Usar la clase Role y User directamente
     role = relationship(Role, back_populates="users")
     evaluations_created = relationship("Evaluation", foreign_keys="[Evaluation.teacher_id]", back_populates="teacher")
     evaluations_received = relationship("Evaluation", foreign_keys="[Evaluation.student_id]", back_populates="student")
     calificaciones = relationship("Calificacion", back_populates="student")
     asistencias = relationship("Asistencia", back_populates="student")
 
-    class Evaluation(Base):
+class Evaluation(Base):
     __tablename__ = "evaluations"
     __table_args__ = {'extend_existing': True}
 
