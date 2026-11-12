@@ -3,41 +3,38 @@ from pydantic import BaseModel
 from typing import List, Optional
 from sqlalchemy.orm import Session
 from backend.database import get_db
-from backend.models import Calificacion, User
-from fastapi import APIRouter
+from backend.models import Calificacion
+from backend.models import Calificacion, Asistencia
 
-router_courses = APIRouter()  # O si ya tienes una instancia llamada 'router':
-#router_courses = router
+router = APIRouter(prefix="/api/v1/courses", tags=["Courses & Grades"])
+router_courses = router
 
-router = APIRouter(prefix="/courses", tags=["Courses & Grades"])
+class StudentGradeItem(BaseModel):
+    id: str
+    name: Optional[str] = None
+    grade: float
 
-class StudentGrade(BaseModel):
-    codigo: str
-    estudiante: str
-    calificacion: float
-
-class GradeUpdatePayload(BaseModel):
+class GradeUpdateRequest(BaseModel):
     course_id: str
     teacher_username: Optional[str] = None
-    students: List[StudentGrade]
+    students: List[StudentGradeItem]
 
 @router.put("/update-grades")
-async def update_course_grades(payload: GradeUpdatePayload, db: Session = Depends(get_db)):
+async def update_grades(payload: GradeUpdateRequest, db: Session = Depends(get_db)):
     try:
-        # Recorrer y actualizar las calificaciones en PostgreSQL para cada estudiante del curso
+        updated_count = 0
         for item in payload.students:
-            # Ejemplo de lógica de actualización o inserción en la BD:
-            # db_cal = db.query(Calificacion).filter(...).first()
-            # if db_cal:
-            #     db_cal.nota = item.calificacion
-            #     db.commit()
-            pass
+            db_cal = db.query(Calificacion).filter(Calificacion.codigo == item.id).first()
+            if db_cal:
+                db_cal.calificacion = item.grade
+                updated_count += 1
 
+        db.commit()
         return {
             "status": "success",
             "message": "Calificaciones actualizadas exitosamente",
-            "course_id": payload.course_id,
-            "updated_count": len(payload.students)
+            "updated_count": updated_count
         }
     except Exception as e:
+        db.rollback()
         raise HTTPException(status_code=500, detail=str(e))

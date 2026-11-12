@@ -1,7 +1,8 @@
+
+
 'use client';
 
-import React, { useState, useEffect } from 'react';
-
+import { useState, useEffect } from 'react';
 // --- CONFIGURACIÓN BASE DE API BACKEND ---
 const getApiUrl = (): string => {
   if (process.env.NEXT_PUBLIC_API_URL) {
@@ -11,6 +12,8 @@ const getApiUrl = (): string => {
   return `http://${host}:8000`;
 };
 
+// After (cleaner, no helper function needed)
+fetch('/api/health')
 // --- TIPOS E INTERFACES DE TS ---
 export type UserRole = 'DOCENTE' | 'DECE' | 'VICERRECTORADO' | 'RECTORADO';
 

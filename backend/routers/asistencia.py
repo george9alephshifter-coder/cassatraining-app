@@ -3,19 +3,17 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 
 from backend.database import get_db
-from backend.models import Asistencia
-from backend.database import get_db
-from backend.models import User
-from backend.models import Role, User, Asistencia  # Use 'backend.models' consistently
+from backend.models import Asistencia, User, Role
+from backend.models import Calificacion, Asistencia
 
-router = APIRouter(prefix="/api/asistencia", tags=["asistencia"])
+router = APIRouter(prefix="/api/v1/courses", tags=["courses"])
 
 async def process_asistencia_payload(request: Request, db: Session):
     try:
         raw_body = await request.json()
         print(">>> [DEBUG ASISTENCIA] RECEIVED PAYLOAD:", raw_body)
 
-        # Handle payload if sent directly as a list [...] vs object {...}
+        # Manejar payload si se envía como lista [...] u objeto {...}
         if isinstance(raw_body, list):
             attendance_list = raw_body
             course_id = ""
@@ -48,13 +46,13 @@ async def process_asistencia_payload(request: Request, db: Session):
             item_course = item.get("course_id") or item.get("course") or course_id
             item_course = item_course.split(" (")[0].strip() if "(" in item_course else item_course.strip()
 
-            # Find existing row in database
+            # Buscar registro existente en la base de datos
             query = db.query(Asistencia).filter(Asistencia.student_id == student_id)
             if item_course:
                 query = query.filter(Asistencia.course_id == item_course)
             record = query.first()
 
-            # Helper function for boolean conversion
+            # Función auxiliar para conversión de booleanos
             def parse_bool(val):
                 if isinstance(val, str):
                     return val.lower() in ("true", "1", "p", "presente", "yes", "y", "t")
@@ -63,7 +61,6 @@ async def process_asistencia_payload(request: Request, db: Session):
             lunes = parse_bool(item.get("lunes", False))
             martes = parse_bool(item.get("martes", False))
             
-            # ⚠️ Fix: Check both accented 'miércoles' and unaccented 'miercoles'
             miercoles_val = item.get("miercoles") if item.get("miercoles") is not None else item.get("miércoles", False)
             miercoles = parse_bool(miercoles_val)
             
@@ -108,13 +105,11 @@ async def process_asistencia_payload(request: Request, db: Session):
         print(">>> [ERROR ASISTENCIA]:", str(e))
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.post("")
-@router.post("/")
-@router.post("/update")
-@router.post("/guardar")
+@router.put("/update-attendance")
+@router.post("/update-attendance")
 @router.put("")
+@router.post("")
 @router.put("/")
-@router.put("/update")
-@router.put("/guardar")
-async def update_asistencia_route(request: Request, db: Session = Depends(get_db)):
+@router.post("/")
+async def update_attendance(request: Request, db: Session = Depends(get_db)):
     return await process_asistencia_payload(request, db)

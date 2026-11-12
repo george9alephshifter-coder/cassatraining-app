@@ -8,10 +8,12 @@ from typing import List, Optional
 import httpx
 import pytz
 from fastapi import Depends, FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from sqlalchemy import text
 from sqlalchemy.orm import Session
+from backend.models import Asistencia, Calificacion, User, Role
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 # Asegurar la resolución del directorio raíz del backend
 BASE_DIR = Path(__file__).resolve().parent
@@ -27,11 +29,12 @@ from routers import asistencia, calificaciones, communications, courses, dece, d
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Sistema CTS Backend", version="1.0.0")
-
+app = FastAPI(title="System CTS API")
 # Configuración robusta de CORS para Vercel, Localhost y Ngrok
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origin_regex=r"https://.*\.ngrok-free\.dev|https://.*\.vercel\.app|http://localhost:\d+|http://127\.0\.0\.1:\d+",
+    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -105,6 +108,10 @@ class ComunicacionCreate(BaseModel):
 @app.get("/", tags=["Health Check"])
 def read_root():
     return {"status": "Backend conectado y configurado correctamente"}
+
+@app.get("/api/health")
+def health_check():
+    return {"status": "online", "engine": "FastAPI running via Uvicorn"}
 
 
 # --- DESPACHO DE REPORTES MULTI-DEPARTAMENTO ---
