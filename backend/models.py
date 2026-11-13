@@ -71,3 +71,57 @@ class Asistencia(Base):
     justification = Column(Text, nullable=True)
 
     student = relationship(User, back_populates="asistencias")
+
+class ComunicacionDECEModel(Base):
+    __tablename__ = "comunicaciones_dece"
+    __table_args__ = {'extend_existing': True}
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    titulo = Column(String, nullable=False)
+    contenido = Column(Text, nullable=False)
+    destinatario = Column(String, nullable=True)
+    fecha_creacion = Column(DateTime, default=datetime.utcnow)
+
+
+class DeceRecord(Base):
+    __tablename__ = "dece_records"
+    __table_args__ = {'extend_existing': True}
+
+    id = Column(Integer, primary_key=True, index=True)
+    student_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    case_notes = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+# Declara el alias aquí mismo o al final del todo una vez que DeceRecord ya existe:
+class ReporteDespacho(Base):
+    __tablename__ = "reportes_despacho"
+    __table_args__ = {'extend_existing': True}
+
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String(150), nullable=False)
+    content = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+class VicerrectoradoReport(Base):
+    __tablename__ = "vicerrectorado_reports"
+    __table_args__ = {'extend_existing': True}
+
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String(150), nullable=False)
+    content = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+class RectoradoReport(Base):
+    __tablename__ = "rectorado_reports"
+    __table_args__ = {'extend_existing': True}
+
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String(150), nullable=False)
+    content = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+# Alias finales necesarios
+ComunicacionDECE = ComunicacionDECEModel
+DECEReport = DeceRecord
+
+

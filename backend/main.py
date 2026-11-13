@@ -22,7 +22,7 @@ if str(BASE_DIR) not in sys.path:
 
 # Importaciones locales directas (ya que main.py está dentro de backend)
 from database import Base, engine, get_db
-from models import Asistencia, Calificacion, ComunicacionDECEModel
+from backend.models import Asistencia, Calificacion, ComunicacionDECEModel as ComunicacionDECE
 from routers import asistencia, calificaciones, communications, courses, dece, despacho
 
 # Creación de tablas ORM en PostgreSQL
